@@ -26,7 +26,7 @@ export class AudioService {
           .audioCodec('aac')
           .save(outputPath)
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err: Error) => reject(err));
       });
       
       return outputPath;
@@ -45,7 +45,7 @@ export class AudioService {
           .audioCodec('aac')
           .save(outputPath)
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err: Error) => reject(err));
       });
       
       return outputPath;
@@ -75,7 +75,7 @@ export class AudioService {
           .audioCodec('aac')
           .save(outputPath)
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err: Error) => reject(err));
       });
       
       return outputPath;
@@ -94,7 +94,7 @@ export class AudioService {
           .audioBitrate(bitrate)
           .save(outputPath)
           .on('end', () => resolve())
-          .on('error', (err) => reject(err));
+          .on('error', (err: Error) => reject(err));
       });
       
       return outputPath;
@@ -107,7 +107,7 @@ export class AudioService {
   async getAudioDuration(audioPath: string): Promise<number> {
     try {
       const metadata = await new Promise<ffmpeg.FfprobeData>((resolve, reject) => {
-        ffmpeg.ffprobe(audioPath, (err, data) => {
+        ffmpeg.ffprobe(audioPath, (err: Error | null, data: ffmpeg.FfprobeData) => {
           if (err) reject(err);
           else resolve(data);
         });

@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import logger from '../utils/logger';
+import prisma from '../utils/db';
+import { User as PrismaUser } from '@prisma/client';
 
 // Define user schema
 export const UserSchema = z.object({
@@ -28,7 +30,7 @@ export class AuthService {
   }
 
   async hashPassword(password: string): Promise<string> {
-    const saltRounds = 10;
+    const saltRounds: number = 10;
     return await bcrypt.hash(password, saltRounds);
   }
 
@@ -50,7 +52,7 @@ export class AuthService {
 
   verifyToken(token: string): JwtPayload | null {
     try {
-      const decoded = jwt.verify(token, this.jwtSecret) as JwtPayload;
+      const decoded = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] }) as JwtPayload;
       return decoded;
     } catch (error) {
       logger.error('Token verification failed:', error);
@@ -58,35 +60,38 @@ export class AuthService {
     }
   }
 
-  // Mock user storage (in a real app, this would use a database)
-  private users: Map<string, User> = new Map();
-
   async registerUser(email: string, password: string): Promise<{ token: string; user: User } | null> {
     try {
       // Check if user already exists
-      for (const user of this.users.values()) {
-        if (user.email === email) {
-          throw new Error('User already exists');
-        }
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingUser) {
+        throw new Error('User already exists');
       }
 
       // Hash password
-      const passwordHash = await this.hashPassword(password);
+      const passwordHash: string = await this.hashPassword(password);
       
       // Create user
-      const userId = Math.random().toString(36).substring(2, 15);
+      const prismaUser: PrismaUser = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+        }
+      });
+
+      // Convert Prisma user to our User type
       const user: User = {
-        id: userId,
-        email,
-        passwordHash,
-        createdAt: new Date(),
+        id: prismaUser.id,
+        email: prismaUser.email,
+        passwordHash: prismaUser.passwordHash,
+        createdAt: prismaUser.createdAt,
       };
 
-      // Store user
-      this.users.set(userId, user);
-
       // Generate token
-      const token = this.generateToken(user);
+      const token: string = this.generateToken(user);
 
       return { token, user };
     } catch (error) {
@@ -98,26 +103,30 @@ export class AuthService {
   async loginUser(email: string, password: string): Promise<{ token: string; user: User } | null> {
     try {
       // Find user
-      let user: User | undefined;
-      for (const u of this.users.values()) {
-        if (u.email === email) {
-          user = u;
-          break;
-        }
-      }
+      const prismaUser = await prisma.user.findUnique({
+        where: { email }
+      });
 
-      if (!user) {
+      if (!prismaUser) {
         throw new Error('User not found');
       }
 
       // Verify password
-      const isValid = await this.verifyPassword(password, user.passwordHash);
+      const isValid: boolean = await this.verifyPassword(password, prismaUser.passwordHash);
       if (!isValid) {
         throw new Error('Invalid password');
       }
 
+      // Convert Prisma user to our User type
+      const user: User = {
+        id: prismaUser.id,
+        email: prismaUser.email,
+        passwordHash: prismaUser.passwordHash,
+        createdAt: prismaUser.createdAt,
+      };
+
       // Generate token
-      const token = this.generateToken(user);
+      const token: string = this.generateToken(user);
 
       return { token, user };
     } catch (error) {

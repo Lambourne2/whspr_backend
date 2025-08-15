@@ -1,16 +1,30 @@
 import { Router } from 'express';
 import os from 'os';
 import logger from '../utils/logger';
+import prisma from '../utils/db';
 
 const router = Router();
 
 // GET /healthz
-router.get('/healthz', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+router.get('/healthz', async (req, res) => {
+  try {
+    // Check database connection
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: 'connected'
+    });
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      timestamp: new Date().toISOString(),
+      database: 'disconnected'
+    });
+  }
 });
 
 // GET /v1/meta

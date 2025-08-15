@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import logger from '../utils/logger';
 
 interface OpenRouterConfig {
@@ -24,7 +24,7 @@ export class OpenRouterService {
   private apiKey: string;
   private model: string;
   private baseUrl: string;
-  private client;
+  private client: AxiosInstance;
 
   constructor(config: OpenRouterConfig) {
     this.apiKey = config.apiKey;
@@ -43,7 +43,7 @@ export class OpenRouterService {
 
   async generateAffirmations(prompt: string, count: number = 20): Promise<string[]> {
     try {
-      const response = await this.client.post<OpenRouterResponse>('/chat/completions', {
+      const response: AxiosResponse<OpenRouterResponse> = await this.client.post<OpenRouterResponse>('/chat/completions', {
         model: this.model,
         messages: [
           {
@@ -58,8 +58,8 @@ export class OpenRouterService {
         temperature: 0.7
       });
 
-      const content = response.data.choices[0].message.content;
-      return content.split('\n').filter(line => line.trim().length > 0);
+      const content: string = response.data.choices[0].message.content;
+      return content.split('\n').filter((line: string) => line.trim().length > 0);
     } catch (error) {
       logger.error('Error generating affirmations with OpenRouter:', error);
       throw new Error('Failed to generate affirmations');

@@ -12,7 +12,15 @@ services:
       - key: DATA_DIR
         value: /var/whspr/data
       - key: ALLOWED_ORIGINS
-        value: http://localhost:5173
+        value: https://your-frontend-domain.com
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
     disk:
       name: whspr-data
       mountPath: /var/whspr

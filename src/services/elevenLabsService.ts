@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
 import logger from '../utils/logger';
@@ -20,7 +20,7 @@ interface ElevenLabsResponse {
 export class ElevenLabsService {
   private apiKey: string;
   private baseUrl: string;
-  private client;
+  private client: AxiosInstance;
 
   constructor(config: ElevenLabsConfig) {
     this.apiKey = config.apiKey;
@@ -41,7 +41,11 @@ export class ElevenLabsService {
     voiceSettings?: VoiceSettings
   ): Promise<Buffer> {
     try {
-      const response = await this.client.post<ElevenLabsResponse>(
+      const config: AxiosRequestConfig = {
+        responseType: 'arraybuffer'
+      };
+      
+      const response: AxiosResponse<ElevenLabsResponse> = await this.client.post<ElevenLabsResponse>(
         `/text-to-speech/${voiceId}`,
         {
           text,
@@ -50,9 +54,7 @@ export class ElevenLabsService {
             similarity_boost: voiceSettings?.similarity_boost || 0.75
           }
         },
-        {
-          responseType: 'arraybuffer'
-        }
+        config
       );
 
       return Buffer.from(response.data);
@@ -69,10 +71,10 @@ export class ElevenLabsService {
     voiceSettings?: VoiceSettings
   ): Promise<string> {
     try {
-      const audioBuffer = await this.synthesizeSpeech(text, voiceId, voiceSettings);
+      const audioBuffer: Buffer = await this.synthesizeSpeech(text, voiceId, voiceSettings);
       
       // Ensure directory exists
-      const dir = path.dirname(outputPath);
+      const dir: string = path.dirname(outputPath);
       await fs.mkdir(dir, { recursive: true });
       
       // Write file
