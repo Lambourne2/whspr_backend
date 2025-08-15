@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: whspr-api
+    runtime: node
+    buildCommand: npm ci && npm run prisma:generate && npm run build
+    startCommand: npm run start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/whspr/data
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:5173
+    disk:
+      name: whspr-data
+      mountPath: /var/whspr
+      sizeGB: 5
+
+databases:
+  - name: whspr-postgres

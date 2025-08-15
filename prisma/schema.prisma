@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  preferences   Preference?
+  tracks        Track[]
+  generationLogs GenerationLog[]
+}
+
+model Preference {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  voiceId        String?
+  defaultTrackId String?
+  gapSeconds     Int?
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model Track {
+  id          String   @id @default(uuid())
+  userId      String?
+  status      String   @default("processing") // 'ready' | 'processing' | 'error'
+  path        String
+  durationSec Int
+  sizeBytes   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model GenerationLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  provider  String   // 'openrouter' | 'elevenlabs'
+  tokens    Int?
+  cost      Float?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
